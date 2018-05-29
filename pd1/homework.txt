@@ -1,0 +1,9 @@
+Homework
+========
+Implement a contract that will provide functions of a map(bytes32 => bytes32) with a feature to iterate over keys.
+
+We will check the homework on the next course.
+
+Entry point: https://gist.github.com/marekkirejczyk/ac45ea52522efe3c77e2ea846e01d4eb
+Online IDE: remix.ethereum.org
+Entry point2: https://gist.github.com/spherefoundry/e843c790675d7f2a42caaee0cb375122

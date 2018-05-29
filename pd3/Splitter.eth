@@ -1,0 +1,5 @@
+contract Splitter {
+    function Splitter(address [] beneficiaries, address feeCollector) public;
+    function split(…) public;
+…
+}
