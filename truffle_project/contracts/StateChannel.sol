@@ -133,16 +133,16 @@ contract StateChannel is Ownable {
         uint8 v, 
         bytes32 r, 
         bytes32 s) public pure returns(bool) {
-        return verify(hash(funds_used, user, channel_number), v, r, s) == user;
+        return verify(hash(uint256(funds_used), uint256(user), uint256(channel_number)), v, r, s) == user;
     }
 
-    function hash(uint256 funds_used, address user, uint256 channel_number) returns(bytes32) {
-        return keccak256(bytes32(funds_used), bytes32(channel_number), bytes32(user));
+    function hash(uint256 funds_used, uint256 user, uint256 channel_number) public pure returns(bytes32) {
+        return sha3(funds_used, user, channel_number);
     }
 
     function verify(bytes32 message, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(prefix, message);
+        bytes32 prefixedHash = sha3(prefix, message);
         address addr = ecrecover(prefixedHash, v, r, s);
         return addr;
 
