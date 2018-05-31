@@ -1,0 +1,151 @@
+pragma solidity ^0.4.23;
+
+// import 'https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol';
+// import 'https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol';
+
+import './Ownable.sol';
+import './SafeMath.sol';
+
+
+contract StateChannel is Ownable {
+
+	using SafeMath for uint256; // TODO
+
+    uint256 public constant PUNISHMENT = 1 ether;  // TODO should be ~10% of value - solidity doesnt have floats, so better to do it that way
+    uint256 public constant MINVAL = 1 ether;  // minimal value
+    uint256 public constant WAITING_PERIOD = 4 * 2880;  // after "close" call, we're waiting ~48h for challenge (new block appears - on average - every 15 seconds)
+    bool public accepting_new_channels;
+
+    enum Stage {
+        Open,
+        WaitingForChallengeByOwner,
+        Closed
+    }
+
+    struct StateS {
+        Stage stage;
+        uint256 cap;
+        uint256 closed_at;
+        uint256 funds_used;
+    }
+
+    mapping (address => uint256) available_channel; // since one user can have multiple channels, this mapping holds the minimal available number
+    mapping (address => mapping (uint256 => StateS)) state;  // the client is responsible for remembering the number - he get's it after initialization
+
+    event CreatedChannel(address user, uint256 channel_number, uint256 cap);
+
+    constructor(bool _accepting_new_channels) public payable {
+        changeAcceptanceStatus(_accepting_new_channels);
+    }
+
+    function changeAcceptanceStatus(bool _accepting_new_channels) public onlyOwner {
+        accepting_new_channels = _accepting_new_channels;
+    }
+
+    function createNewChannel(uint256 cap) public payable returns(uint256) {
+        require (msg.value == cap + PUNISHMENT);
+        require (accepting_new_channels);
+
+        uint256 channel_number = available_channel[msg.sender];
+        available_channel[msg.sender] = channel_number + 1;
+        state[msg.sender][channel_number] = StateS({
+            stage: Stage.Open, 
+            cap: cap,
+            closed_at: 0,
+            funds_used: 0
+        });
+
+        emit CreatedChannel(msg.sender, channel_number, cap);
+        return channel_number;
+    }
+
+    function startClosingByUser (uint256 channel_number, uint256 funds_used) public {
+        StateS storage st = state[msg.sender][channel_number];
+
+        require (st.stage == Stage.Open);
+
+        st.funds_used = funds_used;
+        st.closed_at = block.number + WAITING_PERIOD;
+        st.stage = Stage.WaitingForChallengeByOwner;
+    }
+
+    function closeByOwner (
+        address user, 
+        uint256 channel_number, 
+        uint256 funds_used, 
+        uint8 v, 
+        bytes32 r, 
+        bytes32 s) public onlyOwner {
+        StateS storage st = state[user][channel_number];
+
+        require (st.stage == Stage.Open);
+        require (verify_receipt(funds_used, user, channel_number, v, r, s));
+        
+        st.stage = Stage.Closed;
+
+        uint256 funds_left = st.cap - funds_used;
+        
+        owner.transfer(funds_used);
+        msg.sender.transfer(funds_left + PUNISHMENT);  // return PUNISHMENT to user, since he didn't cheat
+    }
+    
+    function challengeByOwner (address user, 
+        uint256 channel_number, 
+        uint256 funds_used, 
+        uint8 v, 
+        bytes32 r, 
+        bytes32 s) public {
+    	StateS storage st = state[user][channel_number];
+
+    	require (st.stage == Stage.WaitingForChallengeByOwner);
+    	require (st.funds_used < funds_used);  // we can only challenge if we propose higher funds_used  
+        require (verify_receipt(funds_used, user, channel_number, v, r, s));
+
+        st.stage = Stage.Closed;
+        
+        // It appears owner is right - user should then pay PUNISHMENT and return funds to user
+        uint256 funds_left = st.cap - funds_used;
+        
+        owner.transfer(funds_used + PUNISHMENT);
+        msg.sender.transfer(funds_left);
+    }
+
+    function closeByUser (uint256 channel_number) public {
+        StateS storage st = state[msg.sender][channel_number];
+
+        require (st.stage == Stage.WaitingForChallengeByOwner);
+        require (st.closed_at < block.number);
+        
+        st.stage = Stage.Closed;
+
+        // It appears user didn't cheat
+        uint256 funds_left = st.cap - st.funds_used;
+        
+        owner.transfer(st.funds_used);
+        msg.sender.transfer(funds_left + PUNISHMENT);
+    }
+    
+
+    function verify_receipt (
+        uint256 funds_used, 
+        address user, 
+        uint256 channel_number, 
+        uint8 v, 
+        bytes32 r, 
+        bytes32 s) public pure returns(bool) {
+        return verify(hash(funds_used, user, channel_number), v, r, s) == user;
+    }
+
+    function hash(uint256 funds_used, address user, uint256 channel_number) returns(bytes32) {
+        return keccak256(bytes32(funds_used), bytes32(channel_number), bytes32(user));
+    }
+
+    function verify(bytes32 message, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 prefixedHash = keccak256(prefix, message);
+        address addr = ecrecover(prefixedHash, v, r, s);
+        return addr;
+
+        // return ecrecover(message, v, r, s);
+    }
+}
