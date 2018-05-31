@@ -1,0 +1,22 @@
+{
+  "banksy": {
+    "file": "banksy.txt",
+    "access_code": "aaa",
+    "price": 10
+  },
+  "space": {
+    "file": "space.txt",
+    "access_code": "bbb",
+    "price": 5
+  },
+  "monalisa": {
+    "file": "monalisa.txt",
+    "access_code": "ccc",
+    "price": 20
+  },
+  "esher": {
+    "file": "esher.txt",
+    "access_code": "ddd",
+    "price": 1
+  }
+}

@@ -43,7 +43,7 @@ contract StateChannel is Ownable {
     }
 
     function createNewChannel(uint256 cap) public payable returns(uint256) {
-        require (msg.value == cap + PUNISHMENT);
+        require (msg.value == (cap + PUNISHMENT));
         require (accepting_new_channels);
 
         uint256 channel_number = available_channel[msg.sender];
@@ -132,7 +132,11 @@ contract StateChannel is Ownable {
         uint256 channel_number, 
         uint8 v, 
         bytes32 r, 
-        bytes32 s) public pure returns(bool) {
+        bytes32 s) public view returns(bool) {
+        
+        require (state[user][channel_number].cap >= funds_used);
+
+        // converting everything to uint256 because otherwise nothing works
         return verify(hash(uint256(funds_used), uint256(user), uint256(channel_number)), v, r, s) == user;
     }
 
