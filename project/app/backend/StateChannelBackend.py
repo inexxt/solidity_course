@@ -3,12 +3,12 @@ from typing import Optional
 
 import time
 
-from utils import StateChannel, Receipt
+from utils.utils import StateChannel, Receipt
 
 
 class StateChannelBackend(StateChannel):
 
-    INACTIVITY_PERIOD = (60 * 60 * 24 * 30) # 30 days, in seconds
+    INACTIVITY_PERIOD = 30 # (60 * 60 * 24 * 30) # 30 days, in seconds
 
     def __init__(self):
         super().__init__()
@@ -75,7 +75,3 @@ class StateChannelBackend(StateChannel):
             return True
 
         return float(self.receipts[user][channel_number].timestamp) - time.time() > self.INACTIVITY_PERIOD
-
-
-    def isOpen(self, user: str, channel_number: int):
-        return self.contract.functions.isChannelOpen(user, int(channel_number)).call()

@@ -2,21 +2,17 @@ from collections import defaultdict
 
 import time
 
-from utils import Receipt, W3cls, StateChannel
+from utils.utils import Receipt, W3cls, StateChannel
 
 
 class StateChannelFrontend(StateChannel):
     def __init__(self,
-                 account: str = "0xE58ea859e7DE7EaB1328A730CB397d9597F5aDC6",
-                 cap: int = W3cls.ethToWei(10)):
+                 account: str = "0x0b72f9b250780e1fd66c34d4be390e884da814f4"):
         super().__init__()
 
-        self.account = account
-        self.cap = cap
+        self.account = W3cls.normalizeAddress(account)
         self.channels = []
         self.past_used_funds = defaultdict(int)
-
-        self.createNewChannel(self.cap)
 
     def createNewChannel(self, cap: int) -> int:
         self._transactContract(
@@ -24,13 +20,13 @@ class StateChannelFrontend(StateChannel):
             {"from": self.account, "value": cap + self.punishment}
         )
 
-        self.channels.append(len(self.channels))
+        self.channels.append(cap)
         return len(self.channels) - 1
 
     def createReceipt(self,
                       allowed_funds: int,
                       channel_number: int) -> Receipt:
-        assert allowed_funds <= self.cap
+        assert allowed_funds <= self.channels[channel_number]
         assert allowed_funds >= self.past_used_funds[channel_number]
 
         msg = W3cls.w3.soliditySha3(

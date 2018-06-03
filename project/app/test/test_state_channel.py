@@ -3,9 +3,9 @@ from typing import List
 
 from web3.testing import Testing
 
-from ..backend.StateChannelBackend import StateChannelBackend
-from ..frontend.StateChannelFrontend import StateChannelFrontend
-from ..utils import W3cls
+from backend.StateChannelBackend import StateChannelBackend
+from frontend.StateChannelFrontend import StateChannelFrontend
+from utils.utils import W3cls
 
 
 def take_d_N(d: dict, N: int):
@@ -31,14 +31,12 @@ class TestStateChannelSol(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         addresses = W3cls.w3.eth.accounts[2:10]
-        caps = [W3cls.ethToWei(50)] * 8
 
         self.starting_balance_front = [W3cls.w3.eth.getBalance(k) for k in addresses]
 
         self.back = StateChannelBackend()
 
-        self.fronts = [StateChannelFrontend(account=addr, cap=cap)
-                       for addr, cap in zip(addresses, caps)]
+        self.fronts = [StateChannelFrontend(account=addr) for addr in addresses]
 
         self.waitingPeriod = self.back.contract.functions.WAITING_PERIOD().call()
 
@@ -57,14 +55,17 @@ class TestStateChannelSol(unittest.TestCase):
 
         w = W3cls.ethToWei
 
+        f[0].createNewChannel(w(50))
         r = f[0].createReceipt(allowed_funds=w(1), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
 
+        f[1].createNewChannel(w(50))
         r = f[1].createReceipt(allowed_funds=w(1), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
         r = f[1].createReceipt(allowed_funds=w(2), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
 
+        f[2].createNewChannel(w(50))
         r = f[2].createReceipt(allowed_funds=w(2), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
         r = f[2].createReceipt(allowed_funds=w(3), channel_number=0)
@@ -96,6 +97,7 @@ class TestStateChannelSol(unittest.TestCase):
         b: StateChannelBackend = self.back
 
         w = W3cls.ethToWei
+        f.createNewChannel(w(50))
 
         r = f.createReceipt(allowed_funds=w(10), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
@@ -112,6 +114,7 @@ class TestStateChannelSol(unittest.TestCase):
         b: StateChannelBackend = self.back
 
         w = W3cls.ethToWei
+        f.createNewChannel(w(50))
 
         r = f.createReceipt(allowed_funds=w(10), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
@@ -124,6 +127,7 @@ class TestStateChannelSol(unittest.TestCase):
         b: StateChannelBackend = self.back
 
         w = W3cls.ethToWei
+        f.createNewChannel(w(50))
 
         r = f.createReceipt(allowed_funds=w(10), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
@@ -143,6 +147,7 @@ class TestStateChannelSol(unittest.TestCase):
         f: StateChannelFrontend = self.fronts[Id]
         b: StateChannelBackend = self.back
         w = W3cls.ethToWei
+        f.createNewChannel(w(50))
 
         r = f.createReceipt(allowed_funds=w(10), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
@@ -159,6 +164,7 @@ class TestStateChannelSol(unittest.TestCase):
         f: StateChannelFrontend = self.fronts[Id]
         b: StateChannelBackend = self.back
         w = W3cls.ethToWei
+        f.createNewChannel(w(50))
 
         r = f.createReceipt(allowed_funds=w(10), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))

@@ -24,6 +24,11 @@ class W3cls():
         return x * 1000000000000000000
         # return x*100
 
+    @staticmethod
+    def weiToEth(x):
+        return x // 1000000000000000000
+        # return x*100
+
 
 class StateChannel():
     def __init__(self, contract_path="/home/jack/eth_labs/code/project/truffle/build/contracts/StateChannel.json"):
@@ -37,8 +42,8 @@ class StateChannel():
 
     def _transactContract(self, method, t_params: dict):
         t_params["gas"] = "90000"
-        #        try:
         fs = method.transact(t_params)
         W3cls.w3.eth.waitForTransactionReceipt(fs)
-        # except:
-        #     pass
+
+    def isOpen(self, user: str, channel_number: int):
+        return self.contract.functions.isChannelOpen(user, int(channel_number)).call()

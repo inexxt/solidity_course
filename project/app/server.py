@@ -5,8 +5,7 @@ from collections import defaultdict
 from typing import Optional
 
 from flask import Flask, jsonify, request
-from utils import Receipt
-
+from utils.utils import Receipt, W3cls
 
 from backend.StateChannelBackend import StateChannelBackend
 
@@ -16,13 +15,13 @@ app = Flask(__name__)
 
 
 class Server():
-    def __init__(self, content_path="backend/content/content.json", content_files_path="backend/content/"):
+    def __init__(self, content_path="/home/jack/eth_labs/code/project/app/backend/content/content.json", 
+                       content_files_path="/home/jack/eth_labs/code/project/app/backend/content/"):
         with open(content_path, "r") as f:
             self.content = json.load(f)
         self.content_files_path = content_files_path
 
         self.st = StateChannelBackend()
-        self.users = defaultdict(lambda: defaultdict(int))  # a mapping user -> credit
         self.users = defaultdict(lambda: defaultdict(int))  # a mapping user -> credit
 
     def approveBuy(self, wid: str, receipt: dict) -> Optional[dict]:
@@ -35,8 +34,8 @@ class Server():
             return None
 
         self.users[r.account][r.channel_number] += self.st.receiveReceipt(r)
-        if self.users[r.account][r.channel_number] >= self.content[wid]["price"]:
-            self.users[r.account][r.channel_number] -= self.content[wid]["price"]
+        if self.users[r.account][r.channel_number] >= W3cls.ethToWei(self.content[wid]["price"]):
+            self.users[r.account][r.channel_number] -= W3cls.ethToWei(self.content[wid]["price"])
 
         return {"wid": wid, "access_code": self.content[wid]["access_code"]}
 
@@ -57,6 +56,7 @@ class Server():
     def performMaintenanceUserAccounts(self):
         for u in self.users.keys():
             for c in self.users[u].keys():
+                # app.logger.info(u, c)
                 if self.st.isNotActive(u, c):
                     self.closeUserAccount(u, c)
 
@@ -71,12 +71,13 @@ def catalog():
 @app.route("/maintenance")
 def maintenance():
     sr.performMaintenanceUserAccounts()
+    return "200"
 
 
 @app.route("/buy", methods=["POST"])
 def buy():
     if request.method != "POST":
-        return 200
+        return "403"
 
     receipt = {k: v[0] for k, v in dict(request.form).items()}
     wid = receipt["wid"]
@@ -86,13 +87,13 @@ def buy():
     if resp:
         return jsonify(resp)
     else:
-        return 200
+        return "404"
 
 
 @app.route("/watch", methods=["POST"])
 def watch():
     if request.method != "POST":
-        return 200
+        return "403"
 
     wid, code = request.form["wid"], request.form["access_code"]
     resp = sr.showContent(wid, code)
@@ -100,7 +101,7 @@ def watch():
     if resp:
         return jsonify(resp)
     else:
-        return 200
+        return "404"
 
 
 if __name__ == "__main__":
