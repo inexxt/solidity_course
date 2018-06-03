@@ -1,31 +1,44 @@
-from collections import namedtuple
+import json
+import typing
+
 from web3 import Web3
 
-Receipt = namedtuple("Receipt", [
-	"v", "r", "s", 
-	"account", 
-	"allowed_funds", 
-	"channel_number"])
+Receipt = typing.NamedTuple("Receipt", [
+    ("v", int), ("r", str), ("s", str),
+    ("account", str),
+    ("allowed_funds", int),
+    ("channel_number", int),
+    ("timestamp", float)])
 
 
-class W3cls:
-	w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
-	assert w3.eth.blockNumber
+class W3cls():
+    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
+    assert w3.eth.blockNumber
 
-	@staticmethod
-	def normalizeAddress(address):
-    	return W3cls.toChecksumAddress(address)
+    @classmethod
+    def normalizeAddress(cls, address):
+        return cls.w3.toChecksumAddress(address)
+
+    @staticmethod
+    def ethToWei(x):
+        return x * 1000000000000000000
+        # return x*100
 
 
-class StateChannel:
-	def __init__(self, contract_path="../../truffle/build/contracts/StateChannel.json")
+class StateChannel():
+    def __init__(self, contract_path="/home/jack/eth_labs/code/project/truffle/build/contracts/StateChannel.json"):
         with open(contract_path, "r") as f:
             self.contract_data = json.load(f)
-            
-        self.address = W3cls.normalizeAddress(contract_data["networks"]["5777"]["address"])
+
+        self.address = W3cls.normalizeAddress(self.contract_data["networks"]["5777"]["address"])
         self.contract = W3cls.w3.eth.contract(address=self.address, abi=self.contract_data["abi"])
         self.contract_owner = W3cls.normalizeAddress(self.contract.functions.owner().call())
+        self.punishment = self.contract.functions.PUNISHMENT().call()
 
     def _transactContract(self, method, t_params: dict):
+        t_params["gas"] = "90000"
+        #        try:
         fs = method.transact(t_params)
         W3cls.w3.eth.waitForTransactionReceipt(fs)
+        # except:
+        #     pass

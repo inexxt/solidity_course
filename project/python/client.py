@@ -1,23 +1,22 @@
 import requests
-import json
 
-from StateChannelFrontend import StateChannelFrontend
+from frontend.StateChannelFrontend import  StateChannelFrontend
+
 
 class Client():
     def __init__(self,
-                 server_endpoint_buy: str = "http://127.0.0.1:5000/buy", 
-                 server_endpoint_watch: str = "http://127.0.0.1:5000/watch", 
+                 server_endpoint_buy: str = "http://127.0.0.1:5000/buy",
+                 server_endpoint_watch: str = "http://127.0.0.1:5000/watch",
                  server_endpoint_catalog: str = "http://127.0.0.1:5000/catalog",
                  cap: int = 50
                  ):
         self.st = StateChannelFrontend(cap=cap)
-        self.channel_number = self.st.channels[-1] # TODO
+        self.channel_number = self.st.channels[-1]  # TODO
         self.server_endpoint_catalog = server_endpoint_catalog
         self.server_endpoint_buy = server_endpoint_buy
         self.server_endpoint_watch = server_endpoint_watch
         self.used_funds = 0
         self.cap = cap
-
 
     def sendReceipt(self, allowed_funds: int, channel_number: int, wid: str):
         r = {**dict(self.st.createReceipt(allowed_funds, channel_number)._asdict()), "wid": wid}
@@ -33,15 +32,18 @@ class Client():
         return resp["access_code"]
 
     def watch(self, wid: str, access_code: str):
-        return requests.post(self.server_endpoint_watch, data={"wid": wid, "access_code": access_code}).json()["content"]
+        return requests.post(self.server_endpoint_watch, data={"wid": wid, "access_code": access_code}).json()[
+            "content"]
 
     def download_catalog(self):
-        return requests.get(self.server_endpoint_catalog).json()  
+        return requests.get(self.server_endpoint_catalog).json()
 
 
 if __name__ == "__main__":
     client = Client()
     catalog = client.download_catalog()
+    codes = {}
+
     while True:
         print("Catalog: ")
         print(client.download_catalog())
@@ -49,6 +51,7 @@ if __name__ == "__main__":
         wid = input("Select one position: ")
         # wid = "space"
         print(f"Choosing {wid}")
-        code = client.buy(catalog, wid)
+        if wid not in codes:
+            codes[wid] = client.buy(catalog, wid)
         print("Watching...")
-        print(client.watch(wid, code))
+        print(client.watch(wid, codes[wid]))

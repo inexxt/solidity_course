@@ -12,9 +12,8 @@ contract StateChannel is Ownable {
 	using SafeMath for uint256; // TODO
 
     uint256 public constant PUNISHMENT = 1 ether;  // TODO should be ~10% of value - solidity doesnt have floats, so better to do it that way
-    uint256 public constant MINVAL = 1 ether;  // minimal value
-    uint256 public constant WAITING_PERIOD = 4 * 2880;  // after "close" call, we're waiting ~48h for challenge (new block appears - on average - every 15 seconds)
-    bool public accepting_new_channels;
+    uint256 public constant WAITING_PERIOD = 10; // 4 * 2880;  // after "close" call, we're waiting ~48h for challenge (new block appears - on average - every 15 seconds)
+    bool public accepting_new_channels = true;
 
     enum Stage {
         Open,
@@ -44,7 +43,7 @@ contract StateChannel is Ownable {
 
     function createNewChannel(uint256 cap) public payable returns(uint256) {
         require (msg.value == (cap + PUNISHMENT));
-        require (accepting_new_channels);
+        // require (accepting_new_channels);
 
         uint256 channel_number = available_channel[msg.sender];
         available_channel[msg.sender] = channel_number + 1;
@@ -86,7 +85,7 @@ contract StateChannel is Ownable {
         uint256 funds_left = st.cap - funds_used;
         
         owner.transfer(funds_used);
-        msg.sender.transfer(funds_left + PUNISHMENT);  // return PUNISHMENT to user, since he didn't cheat
+        user.transfer(funds_left + PUNISHMENT);  // return PUNISHMENT to user, since he didn't cheat
     }
     
     function challengeByOwner (address user, 
@@ -98,7 +97,8 @@ contract StateChannel is Ownable {
     	StateS storage st = state[user][channel_number];
 
     	require (st.stage == Stage.WaitingForChallengeByOwner);
-    	require (st.funds_used < funds_used);  // we can only challenge if we propose higher funds_used  
+    	require (st.funds_used < funds_used);  // we can only challenge if we propose higher funds_used
+    	require (st.cap >= funds_used); // and we can only propose lower funds than cap
         require (verifyReceipt(funds_used, user, channel_number, v, r, s));
 
         st.stage = Stage.Closed;
@@ -107,7 +107,7 @@ contract StateChannel is Ownable {
         uint256 funds_left = st.cap - funds_used;
         
         owner.transfer(funds_used + PUNISHMENT);
-        msg.sender.transfer(funds_left);
+        user.transfer(funds_left);
     }
 
     function closeByUser (uint256 channel_number) public {
@@ -125,6 +125,16 @@ contract StateChannel is Ownable {
         msg.sender.transfer(funds_left + PUNISHMENT);
     }
     
+    function isChannelOpen(address user, uint256 channel_number) public view returns(bool) {
+        StateS storage st = state[msg.sender][channel_number];
+
+        if (st.stage == Stage.Open) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
     function verifyReceipt (
         uint256 funds_used, 
@@ -133,7 +143,7 @@ contract StateChannel is Ownable {
         uint8 v, 
         bytes32 r, 
         bytes32 s) public view returns(bool) {
-        
+
         require (state[user][channel_number].cap >= funds_used);
 
         // converting everything to uint256 because otherwise nothing works
