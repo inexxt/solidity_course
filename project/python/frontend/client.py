@@ -1,7 +1,7 @@
 import requests
 import json
 
-from StateChannelClient import StateChannelClient
+from StateChannelFrontend import StateChannelFrontend
 
 class Client():
     def __init__(self,
@@ -10,7 +10,7 @@ class Client():
                  server_endpoint_catalog: str = "http://127.0.0.1:5000/catalog",
                  cap: int = 50
                  ):
-        self.st = StateChannelClient(cap=cap)
+        self.st = StateChannelFrontend(cap=cap)
         self.channel_number = self.st.channels[-1] # TODO
         self.server_endpoint_catalog = server_endpoint_catalog
         self.server_endpoint_buy = server_endpoint_buy
@@ -20,7 +20,7 @@ class Client():
 
 
     def sendReceipt(self, allowed_funds: int, channel_number: int, wid: str):
-        r = {**dict(self.st.create_receipt(allowed_funds, channel_number)._asdict()), "wid": wid}
+        r = {**dict(self.st.createReceipt(allowed_funds, channel_number)._asdict()), "wid": wid}
         print(r)
         resp = requests.post(self.server_endpoint_buy, data=r)
         # assert r.status_code == requests.codes.ok

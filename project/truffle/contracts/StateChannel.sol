@@ -79,7 +79,7 @@ contract StateChannel is Ownable {
         StateS storage st = state[user][channel_number];
 
         require (st.stage == Stage.Open);
-        require (verify_receipt(funds_used, user, channel_number, v, r, s));
+        require (verifyReceipt(funds_used, user, channel_number, v, r, s));
         
         st.stage = Stage.Closed;
 
@@ -99,7 +99,7 @@ contract StateChannel is Ownable {
 
     	require (st.stage == Stage.WaitingForChallengeByOwner);
     	require (st.funds_used < funds_used);  // we can only challenge if we propose higher funds_used  
-        require (verify_receipt(funds_used, user, channel_number, v, r, s));
+        require (verifyReceipt(funds_used, user, channel_number, v, r, s));
 
         st.stage = Stage.Closed;
         
@@ -126,7 +126,7 @@ contract StateChannel is Ownable {
     }
     
 
-    function verify_receipt (
+    function verifyReceipt (
         uint256 funds_used, 
         address user, 
         uint256 channel_number, 
@@ -149,7 +149,5 @@ contract StateChannel is Ownable {
         bytes32 prefixedHash = sha3(prefix, message);
         address addr = ecrecover(prefixedHash, v, r, s);
         return addr;
-
-        // return ecrecover(message, v, r, s);
     }
 }
