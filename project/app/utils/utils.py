@@ -35,7 +35,10 @@ class W3cls():
 
 
 class StateChannel():
-    def __init__(self, contract_path="/home/jack/eth_labs/code/project/truffle/build/contracts/StateChannel.json"):
+    def __init__(self,
+                 # contract_path="/home/jack/eth_labs/code/project/truffle/build/contracts/StateChannel.json"
+                 contract_path="/home/jack/eth_labs/code/project//StateChannel.json"
+                 ):
         with open(contract_path, "r") as f:
             self.contract_data = json.load(f)
 

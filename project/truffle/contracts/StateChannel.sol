@@ -9,7 +9,7 @@ import './SafeMath.sol';
 
 contract StateChannel is Ownable {
 
-	using SafeMath for uint256; // TODO
+    using SafeMath for uint256; // TODO
 
     uint256 public constant PUNISHMENT = 1 ether;  // TODO should be ~10% of value - solidity doesnt have floats, so better to do it that way
     uint256 public constant WAITING_PERIOD = 10; // 4 * 2880;  // after "close" call, we're waiting ~48h for challenge (new block appears - on average - every 15 seconds)
@@ -42,11 +42,11 @@ contract StateChannel is Ownable {
     }
 
     function createNewChannel(uint256 cap) public payable returns(uint256) {
-        require (msg.value == (cap + PUNISHMENT));
-        // require (accepting_new_channels);
+        require (msg.value == (cap.add(PUNISHMENT)));
+        require (accepting_new_channels);
 
         uint256 channel_number = available_channel[msg.sender];
-        available_channel[msg.sender] = channel_number + 1;
+        available_channel[msg.sender] = channel_number.add(1);
         state[msg.sender][channel_number] = StateS({
             stage: Stage.Open, 
             cap: cap,
@@ -64,7 +64,7 @@ contract StateChannel is Ownable {
         require (st.stage == Stage.Open);
 
         st.funds_used = funds_used;
-        st.closed_at = block.number + WAITING_PERIOD;
+        st.closed_at = block.number.sub(WAITING_PERIOD);
         st.stage = Stage.WaitingForChallengeByOwner;
     }
 
@@ -82,10 +82,10 @@ contract StateChannel is Ownable {
         
         st.stage = Stage.Closed;
 
-        uint256 funds_left = st.cap - funds_used;
+        uint256 funds_left = st.cap.sub(funds_used);
         
         owner.transfer(funds_used);
-        user.transfer(funds_left + PUNISHMENT);  // return PUNISHMENT to user, since he didn't cheat
+        user.transfer(funds_left.add(PUNISHMENT));  // return PUNISHMENT to user, since he didn't cheat
     }
     
     function challengeByOwner (address user, 
@@ -94,19 +94,19 @@ contract StateChannel is Ownable {
         uint8 v, 
         bytes32 r, 
         bytes32 s) public {
-    	StateS storage st = state[user][channel_number];
+        StateS storage st = state[user][channel_number];
 
-    	require (st.stage == Stage.WaitingForChallengeByOwner);
-    	require (st.funds_used < funds_used);  // we can only challenge if we propose higher funds_used
-    	require (st.cap >= funds_used); // and we can only propose lower funds than cap
+        require (st.stage == Stage.WaitingForChallengeByOwner);
+        require (st.funds_used < funds_used);  // we can only challenge if we propose higher funds_used
+        require (st.cap >= funds_used); // and we can only propose lower funds than cap
         require (verifyReceipt(funds_used, user, channel_number, v, r, s));
 
         st.stage = Stage.Closed;
         
         // It appears the owner is right - user should then pay PUNISHMENT and return funds to user
-        uint256 funds_left = st.cap - funds_used;
+        uint256 funds_left = st.cap.sub(funds_used);
         
-        owner.transfer(funds_used + PUNISHMENT);
+        owner.transfer(funds_used.add(PUNISHMENT));
         user.transfer(funds_left);
     }
 
@@ -119,10 +119,10 @@ contract StateChannel is Ownable {
         st.stage = Stage.Closed;
 
         // It appears the user didn't cheat
-        uint256 funds_left = st.cap - st.funds_used;
+        uint256 funds_left = st.cap.sub(st.funds_used);
         
         owner.transfer(st.funds_used);
-        msg.sender.transfer(funds_left + PUNISHMENT);
+        msg.sender.transfer(funds_left.add(PUNISHMENT));
     }
     
     function verifyReceipt (
