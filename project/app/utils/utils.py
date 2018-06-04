@@ -1,5 +1,6 @@
 import json
 import typing
+from typing import Optional
 
 from web3 import Web3
 
@@ -9,6 +10,9 @@ Receipt = typing.NamedTuple("Receipt", [
     ("allowed_funds", int),
     ("channel_number", int),
     ("timestamp", float)])
+
+
+STATUS_DICT = {0: "open", 1: "closing", 2: "closed"}
 
 
 class W3cls():
@@ -45,5 +49,34 @@ class StateChannel():
         fs = method.transact(t_params)
         W3cls.w3.eth.waitForTransactionReceipt(fs)
 
-    def isOpen(self, user: str, channel_number: int):
-        return self.contract.functions.isChannelOpen(user, int(channel_number)).call()
+    def state(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return self.contract.functions.state(user, int(channel_number)).call()
+
+    def closed_at(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return self.state(user, channel_number)[2]
+
+    def cap(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return self.state(user, channel_number)[1]
+
+    def funds_used(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return self.state(user, channel_number)[3]
+
+    def status(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return self.state(user, channel_number)[0]
+
+    def isOpen(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return STATUS_DICT[self.status(user, channel_number)] == "open"
+
+    def isClosing(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return STATUS_DICT[self.status(user, channel_number)] == "closing"
+
+    def isClosed(self, user: Optional[str], channel_number: int):
+        user = self.account if not user else user
+        return STATUS_DICT[self.status(user, channel_number)] == "closed"

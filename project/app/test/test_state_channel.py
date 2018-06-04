@@ -71,7 +71,7 @@ class TestStateChannelSol(unittest.TestCase):
         r = f[2].createReceipt(allowed_funds=w(3), channel_number=0)
         self.assertTrue(b.receiveReceipt(r))
 
-        f[2].startClosingChannel(0, f[2].past_used_funds[0])
+        f[2].startClosingChannel(0, f[2].curr_used_funds[0])
 
         self.waitWaitingPeriod()
 

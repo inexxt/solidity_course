@@ -28,8 +28,8 @@ contract StateChannel is Ownable {
         uint256 funds_used;
     }
 
-    mapping (address => uint256) available_channel; // since one user can have multiple channels, this mapping holds the minimal available number
-    mapping (address => mapping (uint256 => StateS)) state;  // the client is responsible for remembering the number - he get's it after initialization
+    mapping (address => uint256) public available_channel; // since one user can have multiple channels, this mapping holds the minimal available number
+    mapping (address => mapping (uint256 => StateS)) public state;  // the client is responsible for remembering the number - he get's it after initialization
 
     event CreatedChannel(address user, uint256 channel_number, uint256 cap);
 
@@ -103,7 +103,7 @@ contract StateChannel is Ownable {
 
         st.stage = Stage.Closed;
         
-        // It appears owner is right - user should then pay PUNISHMENT and return funds to user
+        // It appears the owner is right - user should then pay PUNISHMENT and return funds to user
         uint256 funds_left = st.cap - funds_used;
         
         owner.transfer(funds_used + PUNISHMENT);
@@ -118,24 +118,13 @@ contract StateChannel is Ownable {
         
         st.stage = Stage.Closed;
 
-        // It appears user didn't cheat
+        // It appears the user didn't cheat
         uint256 funds_left = st.cap - st.funds_used;
         
         owner.transfer(st.funds_used);
         msg.sender.transfer(funds_left + PUNISHMENT);
     }
     
-    function isChannelOpen(address user, uint256 channel_number) public view returns(bool) {
-        StateS storage st = state[msg.sender][channel_number];
-
-        if (st.stage == Stage.Open) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
     function verifyReceipt (
         uint256 funds_used, 
         address user, 

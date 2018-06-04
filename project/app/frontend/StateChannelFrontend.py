@@ -7,12 +7,12 @@ from utils.utils import Receipt, W3cls, StateChannel
 
 class StateChannelFrontend(StateChannel):
     def __init__(self,
-                 account: str = "0x0b72f9b250780e1fd66c34d4be390e884da814f4"):
+                 account: str):
         super().__init__()
 
         self.account = W3cls.normalizeAddress(account)
         self.channels = []
-        self.past_used_funds = defaultdict(int)
+        self.curr_used_funds = defaultdict(int)
 
     def createNewChannel(self, cap: int) -> int:
         self._transactContract(
@@ -20,14 +20,14 @@ class StateChannelFrontend(StateChannel):
             {"from": self.account, "value": cap + self.punishment}
         )
 
-        self.channels.append(cap)
+        self.channels.append(None)
         return len(self.channels) - 1
 
     def createReceipt(self,
                       allowed_funds: int,
                       channel_number: int) -> Receipt:
-        assert allowed_funds <= self.channels[channel_number]
-        assert allowed_funds >= self.past_used_funds[channel_number]
+        assert allowed_funds <= self.cap(None, channel_number)
+        assert allowed_funds >= self.curr_used_funds[channel_number]
 
         msg = W3cls.w3.soliditySha3(
             ["uint256", "uint256", "uint256"],
@@ -48,7 +48,7 @@ class StateChannelFrontend(StateChannel):
             channel_number,
             v, r, s).call()
 
-        self.past_used_funds[channel_number] = allowed_funds
+        self.curr_used_funds[channel_number] = allowed_funds
 
         return Receipt(
             v=v, r=r, s=s,
@@ -60,6 +60,8 @@ class StateChannelFrontend(StateChannel):
     def startClosingChannel(self,
                             channel_number: int,
                             used_funds: int):
+        used_funds = self.curr_used_funds[channel_number] if used_funds is None else used_funds
+
         self._transactContract(
             self.contract.functions.startClosingByUser(channel_number, used_funds),
             {"from": self.account}
