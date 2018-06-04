@@ -5,6 +5,7 @@ import time
 from web3.testing import Testing
 
 from backend.Server import Server
+from config import config
 from frontend.Client import Client
 from utils.utils import W3cls
 
@@ -35,7 +36,7 @@ class TestIntegration(unittest.TestCase):
 
         self.starting_balance_front = [W3cls.w3.eth.getBalance(k) for k in addresses]
 
-        self.back = Server(content_path="/home/jack/eth_labs/code/project/app/test/content-test.json")
+        self.back = Server(content_path=config.content_test_path)
 
         self.fronts = [Client(addr) for addr in addresses]
 
