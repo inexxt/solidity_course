@@ -33,8 +33,8 @@ class StateChannelFrontend(StateChannel):
         assert allowed_funds >= self.curr_used_funds[channel_number]
 
         msg = W3cls.w3.soliditySha3(
-            ["uint256", "uint256", "uint256"],
-            [allowed_funds, int(self.account, 16), channel_number])
+            ["uint256", "uint256", "uint256", "uint256"],
+            [self.CONTRACT_ID, allowed_funds, int(self.account, 16), channel_number])
 
         signature = W3cls.w3.eth.sign(self.account, msg)
         signature = signature.hex()

@@ -46,6 +46,7 @@ def load_json(fname):
         return json.load(f)
 
 class StateChannel():
+
     def __init__(self):
 
         if config.RINKEBY:
@@ -57,6 +58,7 @@ class StateChannel():
             self.address = W3cls.normalizeAddress(self.contract_data["networks"]["5777"]["address"])
             self.contract = W3cls.w3.eth.contract(address=self.address, abi=self.contract_data["abi"])
 
+        self.CONTRACT_ID = self.getContractId()
         self.contract_owner = W3cls.normalizeAddress(self.contract.functions.owner().call())
         self.punishment = self.contract.functions.PUNISHMENT().call()
 
@@ -96,3 +98,6 @@ class StateChannel():
     def isClosed(self, user: Optional[str], channel_number: int):
         user = self.account if not user else user
         return STATUS_DICT[self.status(user, channel_number)] == "closed"
+
+    def getContractId(self):
+        return self.contract.functions.CHANNEL_ID().call()

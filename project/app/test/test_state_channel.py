@@ -30,7 +30,7 @@ class TestStateChannelSol(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        addresses = W3cls.w3.eth.accounts[2:10]
+        addresses = W3cls.w3.eth.accounts[2:12]
 
         self.starting_balance_front = [W3cls.w3.eth.getBalance(k) for k in addresses]
 
@@ -142,6 +142,22 @@ class TestStateChannelSol(unittest.TestCase):
         self.assertAlmostEqual(self.starting_balance_back / (self.getBackBalance() - w(10)), 1)
         self.assertAlmostEqual(self.starting_balance_front[Id] / (self.getFrontBalance(Id) + w(10)), 1)
 
+    def test_user_cannot_close_before_time(self):
+        Id = 9
+        f: StateChannelFrontend = self.fronts[Id]
+        b: StateChannelBackend = self.back
+
+        w = W3cls.ethToWei
+        c = f.createNewChannel(w(50))
+
+        r = f.createReceipt(allowed_funds=w(10), channel_number=c)
+        self.assertTrue(b.receiveReceipt(r))
+
+        f.startClosingChannel(c, w(10))
+
+        self.assertRaises(ValueError, f.closeChannel, c)
+
+
     def test_dishonest_user_gets_away(self):
         Id = 5
         f: StateChannelFrontend = self.fronts[Id]
@@ -188,6 +204,17 @@ class TestStateChannelSol(unittest.TestCase):
 
         self.assertAlmostEqual(self.starting_balance_back / (self.getBackBalance() - w(10 + 5 + 3)), 1)
         self.assertAlmostEqual(self.starting_balance_front[Id] / (self.getFrontBalance(Id) + w(10 + 5 + 3)), 1)
+
+    def test_wrong_contract_number(self):
+        Id = 8
+        f: StateChannelFrontend = self.fronts[Id]
+        b: StateChannelBackend = self.back
+        w = W3cls.ethToWei
+        f.createNewChannel(w(50))
+
+        f.CONTRACT_ID = 1 # wrong id
+
+        self.assertRaises(Exception, f.createReceipt, w(10), 0)
 
 
 if __name__ == '__main__':

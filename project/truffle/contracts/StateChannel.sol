@@ -11,6 +11,7 @@ contract StateChannel is Ownable {
 
     using SafeMath for uint256; // TODO
 
+    uint256 public constant CHANNEL_ID = 129; // unique contract ID - salt
     uint256 public constant PUNISHMENT = 1 ether;  // TODO should be ~10% of value - solidity doesnt have floats, so better to do it that way
     uint256 public constant WAITING_PERIOD = 10; // 4 * 2880;  // after "close" call, we're waiting ~48h for challenge (new block appears - on average - every 15 seconds)
     bool public accepting_new_channels = true;
@@ -64,7 +65,7 @@ contract StateChannel is Ownable {
         require (st.stage == Stage.Open);
 
         st.funds_used = funds_used;
-        st.closed_at = block.number.sub(WAITING_PERIOD);
+        st.closed_at = block.number.add(WAITING_PERIOD);
         st.stage = Stage.WaitingForChallengeByOwner;
     }
 
@@ -136,11 +137,11 @@ contract StateChannel is Ownable {
         require (state[user][channel_number].cap >= funds_used);
 
         // converting everything to uint256 because otherwise nothing works
-        return verify(hash(uint256(funds_used), uint256(user), uint256(channel_number)), v, r, s) == user;
+        return verify(hash(uint256(CHANNEL_ID), uint256(funds_used), uint256(user), uint256(channel_number)), v, r, s) == user;
     }
 
-    function hash(uint256 funds_used, uint256 user, uint256 channel_number) public pure returns(bytes32) {
-        return sha3(funds_used, user, channel_number);
+    function hash(uint256 CHANNEL_ID, uint256 funds_used, uint256 user, uint256 channel_number) public pure returns(bytes32) {
+        return sha3(CHANNEL_ID, funds_used, user, channel_number);
     }
 
     function verify(bytes32 message, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
