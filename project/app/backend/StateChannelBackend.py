@@ -8,7 +8,7 @@ from utils.utils import StateChannel, Receipt
 
 class StateChannelBackend(StateChannel):
 
-    INACTIVITY_PERIOD = 30 # (60 * 60 * 24 * 30) # 30 days, in seconds
+    INACTIVITY_PERIOD = 60 # (60 * 60 * 24 * 30) # 30 days, in seconds
 
     def __init__(self):
         super().__init__()
@@ -50,9 +50,9 @@ class StateChannelBackend(StateChannel):
         receipt: Receipt = self.receipts[user][channel_number]
         self._transactContract(
             self.contract.functions.closeByOwner(user,
-                                                 channel_number,
-                                                 receipt.allowed_funds,
-                                                 receipt.v,
+                                                 int(channel_number),
+                                                 int(receipt.allowed_funds),
+                                                 int(receipt.v),
                                                  receipt.r,
                                                  receipt.s),
             {"from": self.account}
@@ -62,9 +62,9 @@ class StateChannelBackend(StateChannel):
         receipt: Receipt = self.receipts[user][channel_number]
         self._transactContract(
             self.contract.functions.challengeByOwner(user,
-                                                     channel_number,
-                                                     receipt.allowed_funds,
-                                                     receipt.v,
+                                                     int(channel_number),
+                                                     int(receipt.allowed_funds),
+                                                     int(receipt.v),
                                                      receipt.r,
                                                      receipt.s),
             {"from": self.account}
@@ -74,4 +74,4 @@ class StateChannelBackend(StateChannel):
         if user not in self.receipts or channel_number not in self.receipts[user]:
             return True
 
-        return float(self.receipts[user][channel_number].timestamp) - time.time() > self.INACTIVITY_PERIOD
+        return time.time() - float(self.receipts[user][channel_number].timestamp) > self.INACTIVITY_PERIOD

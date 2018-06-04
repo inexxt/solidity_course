@@ -2,7 +2,7 @@
   "banksy": {
     "file": "banksy.txt",
     "access_code": "aaa",
-    "price": 10
+    "price": 1
   },
   "space": {
     "file": "space.txt",

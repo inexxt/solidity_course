@@ -11,7 +11,10 @@ class StateChannelFrontend(StateChannel):
         super().__init__()
 
         self.account = W3cls.normalizeAddress(account)
-        self.channels = []
+        # get previous channels
+        channel_num = self.contract.functions.available_channel(self.account).call()
+
+        self.channels = list(range(channel_num))
         self.curr_used_funds = defaultdict(int)
 
     def createNewChannel(self, cap: int) -> int:

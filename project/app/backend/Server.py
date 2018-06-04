@@ -4,6 +4,10 @@ import os
 from collections import defaultdict
 from typing import Optional
 
+import sys
+
+import time
+
 from utils.utils import Receipt, W3cls
 
 from backend.StateChannelBackend import StateChannelBackend
@@ -50,9 +54,17 @@ class Server():
         self.users[user][channel_number] = 0
 
     def performMaintenanceUserAccounts(self):
+        # print("Users:")
         for u in self.users.keys():
             for c in self.users[u].keys():
-                # app.logger.info(u, c)
-                if self.st.isNotActive(u, c):
+                # print(u, c, self.st.isNotActive(u, c), file=sys.stderr)
+                if self.st.isNotActive(u, c) and self.st.isOpen(u, c):
+                    print(f"!!!! Closing inactive {u} {c}!!!", file=sys.stderr)
                     self.closeUserAccount(u, c)
-
+                if self.st.isClosing(u, c):
+                    # check if the user is not cheating me
+                    spent_funds = int(self.st.receipts[u][c].allowed_funds)
+                    declared_funds = self.st.funds_used(u, c)
+                    if spent_funds > declared_funds:
+                        print(f"!!!! Challenging {u} {c} - declared {declared_funds}, spent {spent_funds}!!!", file=sys.stderr)
+                        self.st.challenge(u, c)

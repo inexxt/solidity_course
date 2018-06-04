@@ -3,6 +3,8 @@ import typing
 from typing import Optional
 
 from web3 import Web3
+from web3.middleware import geth_poa_middleware
+from config import config
 
 Receipt = typing.NamedTuple("Receipt", [
     ("v", int), ("r", str), ("s", str),
@@ -16,7 +18,12 @@ STATUS_DICT = {0: "open", 1: "closing", 2: "closed"}
 
 
 class W3cls():
-    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
+
+    w3 = Web3(Web3.HTTPProvider("http://localhost:8545"))
+
+    if config.RINKEBY:
+        w3.middleware_stack.inject(geth_poa_middleware, layer=0)
+
     assert w3.eth.blockNumber
 
     @classmethod
@@ -34,16 +41,22 @@ class W3cls():
         # return x*100
 
 
-class StateChannel():
-    def __init__(self,
-                 # contract_path="/home/jack/eth_labs/code/project/truffle/build/contracts/StateChannel.json"
-                 contract_path="/home/jack/eth_labs/code/project//StateChannel.json"
-                 ):
-        with open(contract_path, "r") as f:
-            self.contract_data = json.load(f)
+def load_json(fname):
+    with open(fname, "r") as f:
+        return json.load(f)
 
-        self.address = W3cls.normalizeAddress(self.contract_data["networks"]["5777"]["address"])
-        self.contract = W3cls.w3.eth.contract(address=self.address, abi=self.contract_data["abi"])
+class StateChannel():
+    def __init__(self):
+
+        if config.RINKEBY:
+            self.contract_data = load_json(config.contract_path["rinkeby"])
+            self.address = W3cls.normalizeAddress("0xaEAB0A3321aFfd19dCe9D51A7a45fc8781E3E1Bb")
+            self.contract = W3cls.w3.eth.contract(address=self.address, abi=self.contract_data)
+        else:
+            self.contract_data = load_json(config.contract_path["local"])
+            self.address = W3cls.normalizeAddress(self.contract_data["networks"]["5777"]["address"])
+            self.contract = W3cls.w3.eth.contract(address=self.address, abi=self.contract_data["abi"])
+
         self.contract_owner = W3cls.normalizeAddress(self.contract.functions.owner().call())
         self.punishment = self.contract.functions.PUNISHMENT().call()
 
