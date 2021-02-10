@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a project containing an example implementation of State channels for Ethereum network. It contains both the solidity code and a backend code in Python, which implements a simple store mechanics.
+This is a project containing an example implementation of State channels for Ethereum network. It contains the contract code (in Solidity) and a backend code (in Python), which implements a simple store CLI application.
 
 ## Instruction
 
