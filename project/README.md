@@ -1,4 +1,9 @@
 # README
+
+## Description
+
+This is a project containing an example implementation of State channels for Ethereum network. It contains both the solidity code and a backend code in Python, which implements a simple store mechanics.
+
 ## Instruction
 
 Change the `MAIN_PATH` in the `app/config/config.py` to the path where the repo is.
